@@ -1,5 +1,5 @@
 <?php foreach ($arResult['ITEMS'] as $item): ?>
-    <a class="article-item article-list__item" href="for-individuals.html" data-anim="anim-3">
+    <a class="article-item article-list__item" href="#" data-anim="anim-3">
         <div class="article-item__background">
             <img src="<?=$item['PREVIEW_PICTURE']['SRC'] ?? ''?>"
                  data-src="<?=$item['DETAIL_TEXT'] ?? ''?>"
@@ -13,4 +13,5 @@
         </div>
     </a>
 <?php endforeach; ?>
+
 
