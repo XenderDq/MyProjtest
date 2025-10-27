@@ -1,6 +1,4 @@
 <?
-require($_SERVER["DOCUMENT_ROOT"]."/bitrix/header.php");
-
 $APPLICATION->SetTitle("Новости");
 ?><?$APPLICATION->IncludeComponent(
 	"bitrix:news", 
@@ -93,4 +91,4 @@ $APPLICATION->SetTitle("Новости");
 		)
 	),
 	false
-);?><?require($_SERVER["DOCUMENT_ROOT"]."/bitrix/footer.php");?>
+);?>
