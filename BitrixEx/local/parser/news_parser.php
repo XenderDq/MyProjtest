@@ -194,6 +194,7 @@ class NewsParser
     }
 }
 
+
 $iblockId = 6; 
 
 $parser = new NewsParser($iblockId);
@@ -218,25 +219,68 @@ if ($result['success']) {
         foreach ($dataArray as $key => $value) {
             $dataArray[$key]['PROPS'] = array_slice($value, -2);
         }
+        
 
     $el = new CIBlockElement;
 
     foreach ($dataArray as $key => $value) {
+        $propertyValues = [];
+        
+        foreach ($value['PROPS'] as $propCode => $propValue) {
+            $property = CIBlockProperty::GetList(
+                [], 
+                [
+                'IBLOCK_ID' => $iblockId,
+                'CODE' => $propCode
+                ]
+            )->Fetch();
+            
+            if ($property && $property['PROPERTY_TYPE'] == 'L') {
+                $enumValue = CIBlockPropertyEnum::GetList(
+                    [], 
+                    [
+                    'PROPERTY_ID' => $property['ID'],
+                    'VALUE' => $propValue
+                    ]
+                )->Fetch();
+                
+                if ($enumValue) {
+                    $propertyValues[$propCode] = $enumValue['ID'];
+                } else {
+                    $enum = new CIBlockPropertyEnum;
+                    $newEnumId = $enum->Add([
+                        'PROPERTY_ID' => $property['ID'],
+                        'VALUE' => $propValue,
+                        'XML_ID' => CUtil::translit($propValue, 'ru') . '_' . time(),
+                        'SORT' => 500
+                    ]);
+                    
+                    if ($newEnumId) {
+                        $propertyValues[$propCode] = $newEnumId;
+                    }
+                }
+            } else {
+                $propertyValues[$propCode] = $propValue;
+            }
+        }
+        
         $PRODUCT_ID = $el->Add([
             "IBLOCK_SECTION_ID" => false,        
             "IBLOCK_ID" => $iblockId,
-            "PROPERTY_VALUES" => $value['PROPS'],
+            "PROPERTY_VALUES" => $propertyValues,
             "NAME" => $value['NAME'],
             "ACTIVE" => "Y",          
             "PREVIEW_TEXT" => $value['PREVIEW_TEXT'],
             "DETAIL_TEXT" => $value['DETAIL_TEXT'],
         ]);
+        
         if ($PRODUCT_ID) {
-                echo "Добавлен элемент ID: " . $PRODUCT_ID . "\n";
+            echo "Добавлен элемент ID: " . $PRODUCT_ID . "\n";
         } else {
             echo "Ошибка: " . $el->LAST_ERROR . "\n";
         }
     }
+
 
     fclose($file);
     } else {
