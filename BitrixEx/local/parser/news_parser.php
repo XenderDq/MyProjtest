@@ -194,7 +194,6 @@ class NewsParser
     }
 }
 
-
 $iblockId = 6; 
 
 $parser = new NewsParser($iblockId);
@@ -217,70 +216,76 @@ if ($result['success']) {
         }
 
         foreach ($dataArray as $key => $value) {
-            $dataArray[$key]['PROPS'] = array_slice($value, -2);
-        }
-        
-
-    $el = new CIBlockElement;
-
-    foreach ($dataArray as $key => $value) {
-        $propertyValues = [];
-        
-        foreach ($value['PROPS'] as $propCode => $propValue) {
-            $property = CIBlockProperty::GetList(
-                [], 
-                [
-                'IBLOCK_ID' => $iblockId,
-                'CODE' => $propCode
-                ]
-            )->Fetch();
+            $newItem = array_slice($value, 0, 4, true);
             
-            if ($property && $property['PROPERTY_TYPE'] == 'L') {
-                $enumValue = CIBlockPropertyEnum::GetList(
+            $props = array_slice($value, 4, null, true);
+            if (isset($props['PROPS'])) {
+                unset($props['PROPS']);
+            }
+            
+            $newItem['PROPS'] = $props;
+            $dataArray[$key] = $newItem;
+        }
+
+        $el = new CIBlockElement;
+
+        foreach ($dataArray as $key => $value) {
+            $propertyValues = [];
+            
+            foreach ($value['PROPS'] as $propCode => $propValue) {
+                $property = CIBlockProperty::GetList(
                     [], 
                     [
-                    'PROPERTY_ID' => $property['ID'],
-                    'VALUE' => $propValue
+                    'IBLOCK_ID' => $iblockId,
+                    'CODE' => $propCode
                     ]
                 )->Fetch();
                 
-                if ($enumValue) {
-                    $propertyValues[$propCode] = $enumValue['ID'];
-                } else {
-                    $enum = new CIBlockPropertyEnum;
-                    $newEnumId = $enum->Add([
+                if ($property && $property['PROPERTY_TYPE'] == 'L') {
+                    $enumValue = CIBlockPropertyEnum::GetList(
+                        [], 
+                        [
                         'PROPERTY_ID' => $property['ID'],
-                        'VALUE' => $propValue,
-                        'XML_ID' => CUtil::translit($propValue, 'ru') . '_' . time(),
-                    ]);
+                        'VALUE' => $propValue
+                        ]
+                    )->Fetch();
                     
-                    if ($newEnumId) {
-                        $propertyValues[$propCode] = $newEnumId;
+                    if ($enumValue) {
+                        $propertyValues[$propCode] = $enumValue['ID'];
+                    } else {
+                        $enum = new CIBlockPropertyEnum;
+                        $newEnumId = $enum->Add([
+                            'PROPERTY_ID' => $property['ID'],
+                            'VALUE' => $propValue,
+                            'XML_ID' => CUtil::translit($propValue, 'ru') . '_' . time(),
+                        ]);
+                        
+                        if ($newEnumId) {
+                            $propertyValues[$propCode] = $newEnumId;
+                        }
                     }
+                } else {
+                    $propertyValues[$propCode] = $propValue;
                 }
+            }
+            
+            $PRODUCT_ID = $el->Add([
+                "IBLOCK_SECTION_ID" => false,        
+                "IBLOCK_ID" => $iblockId,
+                "PROPERTY_VALUES" => $propertyValues,
+                "NAME" => $value['NAME'],
+                "ACTIVE" => "Y",          
+                "PREVIEW_TEXT" => $value['PREVIEW_TEXT'],
+                "DETAIL_TEXT" => $value['DETAIL_TEXT'],
+            ]);
+            
+            if ($PRODUCT_ID) {
+                echo "Добавлен элемент ID: " . $PRODUCT_ID . "\n";
             } else {
-                $propertyValues[$propCode] = $propValue;
+                echo "Ошибка: " . $el->LAST_ERROR . "\n";
             }
         }
         
-        $PRODUCT_ID = $el->Add([
-            "IBLOCK_SECTION_ID" => false,        
-            "IBLOCK_ID" => $iblockId,
-            "PROPERTY_VALUES" => $propertyValues,
-            "NAME" => $value['NAME'],
-            "ACTIVE" => "Y",          
-            "PREVIEW_TEXT" => $value['PREVIEW_TEXT'],
-            "DETAIL_TEXT" => $value['DETAIL_TEXT'],
-        ]);
-        
-        if ($PRODUCT_ID) {
-            echo "Добавлен элемент ID: " . $PRODUCT_ID . "\n";
-        } else {
-            echo "Ошибка: " . $el->LAST_ERROR . "\n";
-        }
-    }
-
-
     fclose($file);
     } else {
         echo "Ошибка открытия файла\n";
@@ -289,4 +294,5 @@ if ($result['success']) {
     echo "Ошибка: " . $result['error'] . "\n";
 }
 ?>
+
 
