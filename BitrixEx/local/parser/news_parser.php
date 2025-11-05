@@ -252,7 +252,6 @@ if ($result['success']) {
                         'PROPERTY_ID' => $property['ID'],
                         'VALUE' => $propValue,
                         'XML_ID' => CUtil::translit($propValue, 'ru') . '_' . time(),
-                        'SORT' => 500
                     ]);
                     
                     if ($newEnumId) {
@@ -290,3 +289,4 @@ if ($result['success']) {
     echo "Ошибка: " . $result['error'] . "\n";
 }
 ?>
+
